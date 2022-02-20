@@ -23,7 +23,7 @@ import org.springframework.beans.factory.support.{ AutowireCandidateQualifier, D
 import org.springframework.core.annotation.AnnotationUtils
 import play.api.inject._
 
-import scala.collection.JavaConverters._
+import scala.jdk.CollectionConverters._
 
 class DefaultPlayModuleBeanDefinitionReader extends PlayModuleBeanDefinitionReader {
 
@@ -79,8 +79,8 @@ class DefaultPlayModuleBeanDefinitionReader extends PlayModuleBeanDefinitionRead
             args.addIndexedArgumentValue(2, beanFactory)
             beanDef.setConstructorArgumentValues(args)
           } else {
-            beanDef.setBeanClass(clazz.asInstanceOf[Class[_]])
-            SpringBuilder.maybeSetScope(beanDef, clazz.asInstanceOf[Class[_]])
+            beanDef.setBeanClass(clazz)
+            SpringBuilder.maybeSetScope(beanDef, clazz)
           }
 
           beanDef.setPrimary(false)

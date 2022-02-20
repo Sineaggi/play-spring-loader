@@ -1,14 +1,15 @@
+import scala.sys.process._
 
 organization := "com.lightbend.play"
 name := "play-spring-loader"
 
-playBuildRepoName in ThisBuild := "play-spring-loader"
+ThisBuild / playBuildRepoName := "play-spring-loader"
 
 organizationName := "Lightbend"
 startYear := Some(2017)
 
-val PlayVersion = "2.6.6"
-val SpringVersion = "4.3.11.RELEASE"
+val PlayVersion = "2.8.13"
+val SpringVersion = "5.3.16"
 
 lazy val root = (project in file(".")).enablePlugins(PlayLibrary)
 
@@ -17,7 +18,8 @@ libraryDependencies ++= Seq(
   "org.springframework" % "spring-context" % SpringVersion,
 
   "com.typesafe.play" %% "play-java" % PlayVersion,
-  "com.novocode" % "junit-interface" % "0.11" % "test"
+  "com.novocode" % "junit-interface" % "0.11" % Test,
+  "org.slf4j" % "slf4j-simple" % "1.7.36" % Test
 )
 
 import ReleaseTransformations._
@@ -37,7 +39,7 @@ releaseProcess := Seq[ReleaseStep](
   pushChanges
 )
 
-testOptions in Test := Seq(Tests.Argument(TestFrameworks.JUnit, "-a"))
+Test / testOptions := Seq(Tests.Argument(TestFrameworks.JUnit, "-a"))
 
 lazy val checkCodeFormat = taskKey[Unit]("Check that code format is following Scalariform rules")
 

@@ -1,17 +1,8 @@
-# End of Life
-
-The active Playframework contributors consider this repository has reached End of Life and archived it.
-
-This repository is not being used anymore and won't get any further updates.
-
-Thank you to all contributors that worked on this repository!
-
-
 # Play Spring Loader
 
 This is an application loader for Play applications that runs with Spring as the DI. It binds and allows injecting all Play-provided components in addition to any components provided by third-party Play modules (defined as a `play.api.inject.Module`)
 
-The current version targets Play 2.6.x and Spring 4.3.x. It may work but has not been tested on other versions.
+The current version targets Play 2.8.x and Spring 5.3.x. It may work but has not been tested on other versions.
 
 The application loader was originally authored by Remi Thieblin based on the original proof of concept by James Roper. It is now being maintained by the Play team. There are currently no plans to add new features, but we're happy to accept contributions from the community. This project still needs tests and also a Java API for the SpringApplicationBuilder (though the Scala API can be used from Java).
 

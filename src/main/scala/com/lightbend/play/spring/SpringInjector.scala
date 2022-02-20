@@ -31,9 +31,9 @@ class SpringInjector(factory: DefaultListableBeanFactory) extends Injector {
   private val bpp = new AutowiredAnnotationBeanPostProcessor()
   bpp.setBeanFactory(factory)
 
-  def instanceOf[T](implicit ct: ClassTag[T]) = instanceOf(ct.runtimeClass).asInstanceOf[T]
+  def instanceOf[T](implicit ct: ClassTag[T]): T = instanceOf(ct.runtimeClass).asInstanceOf[T]
 
-  def instanceOf[T](clazz: Class[T]) = {
+  def instanceOf[T](clazz: Class[T]): T = {
     getBean(clazz)
   }
 
@@ -64,7 +64,7 @@ class SpringInjector(factory: DefaultListableBeanFactory) extends Injector {
     getBean(key.clazz)
   }
 
-  def tryCreate[T](clazz: Class[T]) = {
+  def tryCreate[T](clazz: Class[T]): T = {
     val beanDef = new GenericBeanDefinition()
     beanDef.setScope(BeanDefinition.SCOPE_PROTOTYPE)
     SpringBuilder.maybeSetScope(beanDef, clazz)
@@ -96,7 +96,7 @@ object SpringableModule {
   }
 
   /**
-   * Attempt to convert a module of unknown type to a GuiceableModule.
+   * Attempt to convert a module of unknown type to a SpringableModule.
    */
   def springable(module: Any): Module = module match {
     case playModule: Module => playModule

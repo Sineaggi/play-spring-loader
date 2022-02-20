@@ -30,7 +30,7 @@ import org.springframework.context.annotation.AnnotationConfigApplicationContext
 import play.api._
 import play.api.inject._
 
-import scala.collection.JavaConverters._
+import scala.jdk.CollectionConverters._
 import scala.reflect.ClassTag
 
 /**
@@ -78,7 +78,7 @@ abstract class SpringBuilder[Self] protected (
    * Add additional configuration.
    */
   final def configure(conf: Configuration): Self =
-    copyBuilder(configuration = configuration ++ conf)
+    copyBuilder(configuration = configuration.withFallback(conf))
 
   /**
    * Add additional configuration.
@@ -121,10 +121,8 @@ abstract class SpringBuilder[Self] protected (
 
   def createModules(): Seq[Module] = {
 
-    val injectorModule = new Module {
-      def bindings(environment: Environment, configuration: Configuration) = Seq(
-        bind[play.inject.Injector].to[play.inject.DelegateInjector])
-    }
+    val injectorModule: Module = (_: Environment, _: Configuration) => Seq(
+      bind[play.inject.Injector].to[play.inject.DelegateInjector])
     val enabledModules: Seq[Module] = filterOut(disabled, modules)
     val bindingModules: Seq[Module] = enabledModules :+ injectorModule
     val springableOverrides: Seq[Module] = overrides.map(SpringableModule.springable)
@@ -227,7 +225,7 @@ private object SpringBuilder {
   /**
    * Set the scope on the given bean definition if a scope annotation is declared on the class.
    */
-  def maybeSetScope(bd: GenericBeanDefinition, clazz: Class[_]) {
+  def maybeSetScope(bd: GenericBeanDefinition, clazz: Class[_]): Unit = {
     clazz.getAnnotations.foreach { annotation =>
       if (annotation.annotationType().getAnnotations.exists(_.annotationType() == classOf[javax.inject.Scope])) {
         setScope(bd, annotation.annotationType())
@@ -238,11 +236,11 @@ private object SpringBuilder {
   /**
    * Set the given scope annotation scope on the given bean definition.
    */
-  def setScope(bd: GenericBeanDefinition, clazz: Class[_ <: Annotation]) = {
+  def setScope(bd: GenericBeanDefinition, clazz: Class[_ <: Annotation]): Unit = {
     clazz match {
       case singleton if singleton == classOf[javax.inject.Singleton] =>
         bd.setScope(BeanDefinition.SCOPE_SINGLETON)
-      case other =>
+      case _ =>
       // todo: use Jsr330ScopeMetaDataResolver to resolve and set scope
     }
   }
@@ -287,21 +285,20 @@ class BindingKeyFactoryBean[T](key: BindingKey[T], objectType: Class[_], factory
 
   private def getNameFromMatches(candidates: Seq[String]): Option[String] = {
     candidates match {
-      case Nil => throw new NoSuchBeanDefinitionException(key.clazz, "Binding alias for type " + objectType + " to " + key,
-        "No bean found for binding alias")
+      case Nil => throw new NoSuchBeanDefinitionException(key.clazz, s"Binding alias for type $objectType to $key: No bean found for binding alias")
       case single :: Nil => Some(single)
       case multiple => throw new NoUniqueBeanDefinitionException(key.clazz, multiple.asJava)
     }
 
   }
 
-  def getObject = {
+  def getObject: T = {
     beanName.fold(factory.getBean(key.clazz))(name => factory.getBean(name).asInstanceOf[T])
   }
 
-  def getObjectType = objectType
+  def getObjectType: Class[_] = objectType
 
-  def isSingleton = false
+  override def isSingleton = false
 }
 
 /**
@@ -310,7 +307,7 @@ class BindingKeyFactoryBean[T](key: BindingKey[T], objectType: Class[_], factory
 class ProviderFactoryBean[T](provider: Provider[T], objectType: Class[_], factory: AutowireCapableBeanFactory)
   extends FactoryBean[T] {
 
-  lazy val injectedProvider = {
+  lazy val injectedProvider: Provider[T] = {
     // Autowire the providers properties - Play needs this in a few places.
     val bpp = new AutowiredAnnotationBeanPostProcessor()
     bpp.setBeanFactory(factory)
@@ -318,11 +315,11 @@ class ProviderFactoryBean[T](provider: Provider[T], objectType: Class[_], factor
     provider
   }
 
-  def getObject = injectedProvider.get()
+  def getObject: T = injectedProvider.get()
 
-  def getObjectType = objectType
+  def getObjectType: Class[_] = objectType
 
-  def isSingleton = false
+  override def isSingleton = false
 }
 
 /**
@@ -333,9 +330,9 @@ object QualifierChecker extends QualifierAnnotationAutowireCandidateResolver {
   /**
    * Override to expose as public
    */
-  override def checkQualifier(bdHolder: BeanDefinitionHolder, annotation: Annotation, typeConverter: TypeConverter) = {
+  override def checkQualifier(bdHolder: BeanDefinitionHolder, annotation: Annotation, typeConverter: TypeConverter): Boolean = {
     bdHolder.getBeanDefinition match {
-      case root: RootBeanDefinition => super.checkQualifier(bdHolder, annotation, typeConverter)
+      case _: RootBeanDefinition => super.checkQualifier(bdHolder, annotation, typeConverter)
       case nonRoot =>
         val bdh = new BeanDefinitionHolder(RootBeanDefinitionCreator.create(nonRoot), bdHolder.getBeanName)
         super.checkQualifier(bdh, annotation, typeConverter)

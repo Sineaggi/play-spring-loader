@@ -34,6 +34,8 @@ class SpringApplicationBuilder(
   beanReader: PlayModuleBeanDefinitionReader = DefaultPlayModuleBeanDefinitionReader()) extends SpringBuilder[SpringApplicationBuilder](
   environment, configuration, modules, overrides, disabled, beanReader) {
 
+  private val logger: Logger = Logger(getClass)
+
   // extra constructor for creating from Java
   def this() = this(environment = Environment.simple())
 
@@ -52,25 +54,24 @@ class SpringApplicationBuilder(
 
   override def prepareConfig(): SpringApplicationBuilder = {
     val initialConfiguration = loadConfiguration(environment)
-    val appConfiguration = initialConfiguration ++ configuration
+    val appConfiguration = initialConfiguration.withFallback(configuration)
 
     LoggerConfigurator(environment.classLoader).foreach {
       _.configure(environment)
     }
 
     if (shouldDisplayLoggerDeprecationMessage(appConfiguration)) {
-      Logger.warn("Logger configuration in conf files is deprecated and has no effect. Use a logback configuration file instead.")
+      logger.warn("Logger configuration in conf files is deprecated and has no effect. Use a logback configuration file instead.")
     }
 
     val loadedModules = loadModules(environment, appConfiguration)
 
     copy(configuration = appConfiguration)
       .bindings(loadedModules: _*)
-      .bindings(new Module {
-        override def bindings(env: Environment, conf: Configuration): Seq[Binding[_]] = Seq(
-          bind[OptionalSourceMapper] to new OptionalSourceMapper(None),
-          bind[WebCommands] to new DefaultWebCommands)
-      })
+      .bindings((_: Environment, _: Configuration) => Seq(
+        bind[OptionalDevContext] to new OptionalDevContext(None),
+        bind[OptionalSourceMapper] to new OptionalSourceMapper(None),
+        bind[WebCommands] to new DefaultWebCommands))
   }
 
   /**
@@ -82,7 +83,7 @@ class SpringApplicationBuilder(
    * @return Returns true if one of the keys contains a deprecated value, otherwise false
    */
   def shouldDisplayLoggerDeprecationMessage(appConfiguration: Configuration): Boolean = {
-    import scala.collection.JavaConverters._
+    import scala.jdk.CollectionConverters._
     import scala.collection.mutable
 
     val deprecatedValues = List("DEBUG", "WARN", "ERROR", "INFO", "TRACE", "OFF")

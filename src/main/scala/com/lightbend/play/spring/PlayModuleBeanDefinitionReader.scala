@@ -21,6 +21,6 @@ import play.api.inject.Binding
 
 trait PlayModuleBeanDefinitionReader {
 
-  def bind(beanFactory: DefaultListableBeanFactory, binding: Binding[_])
+  def bind(beanFactory: DefaultListableBeanFactory, binding: Binding[_]): Unit
 
 }

@@ -31,7 +31,7 @@ class SpringApplicationLoader(protected val initialBuilder: SpringApplicationBui
   // empty constructor needed for instantiating via reflection
   def this() = this(new SpringApplicationBuilder)
 
-  def load(context: Context) = {
+  def load(context: Context): Application = {
 
     builder(context).build()
   }
@@ -61,15 +61,12 @@ private object SpringApplicationLoader {
   /**
    * The default overrides provided by the Scala and Java SpringApplicationLoaders.
    */
-  def defaultOverrides(context: ApplicationLoader.Context) = {
+  def defaultOverrides(context: ApplicationLoader.Context): Seq[Module] = {
+
     Seq(
-      new Module {
-        def bindings(environment: Environment, configuration: Configuration) = Seq(
-          bind[OptionalSourceMapper] to new OptionalSourceMapper(context.sourceMapper),
-          bind[WebCommands] to context.webCommands,
-          bind[Assets].to[Assets],
-          bind[play.Configuration].to[play.Configuration])
-      })
+      (_: Environment, _: Configuration) => Seq(
+        bind[OptionalDevContext] to new OptionalDevContext(context.devContext),
+        bind[ApplicationLifecycle] to context.lifecycle))
   }
 
 }
